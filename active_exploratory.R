@@ -1,12 +1,12 @@
 library(TelemetryR); library(ggplot2); library(dplyr)
-pass.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
+listen.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
                      header = T, stringsAsFactors = F)
 
-pass.dat <- pass.dat %>% 
+listen.dat <- listen.dat %>% 
   mutate(pred.growth = sturgrow(Temp, Sal, DO.pct),
          river = substr(Site.ID, 1, 2))
 
-pd_mean <- pass.dat %>%
+ld_mean <- listen.dat %>%
   group_by(Site.ID, Cruise) %>%
   summarize(temp = mean(Temp),
             do = mean(DO.pct),
@@ -15,18 +15,18 @@ pd_mean <- pass.dat %>%
 
 
 test <- function(var, brk){
-  pd_bot <- pass.dat %>%
+  ld_bot <- listen.dat %>%
     filter(Type == 'B')
-  pd_bot <- pd_bot %>%  
-    mutate(bin = findInterval(pd_bot[, var],
-                              seq(floor(range(pd_bot[, var])[1]),
-                                  ceiling(range(pd_bot[, var])[2]), brk)))
-  det.bins <- pd_bot %>%
+  ld_bot <- ld_bot %>%  
+    mutate(bin = findInterval(ld_bot[, var],
+                              seq(floor(range(ld_bot[, var])[1]),
+                                  ceiling(range(ld_bot[, var])[2]), brk)))
+  det.bins <- ld_bot %>%
     group_by(bin) %>%
     summarize(detect = sum(Detections))
   
-  histo <- hist(pd_bot[, var], breaks = seq(floor(range(pd_bot[, var])[1]),
-                                            ceiling(range(pd_bot[, var])[2]),
+  histo <- hist(ld_bot[, var], breaks = seq(floor(range(ld_bot[, var])[1]),
+                                            ceiling(range(ld_bot[, var])[2]),
                                             brk),
                 plot = F)
   mids <- data.frame(mids = histo$mids)
@@ -37,12 +37,12 @@ test <- function(var, brk){
 
   par(mar = c(5, 4, 4, 5) + 0.1)
   plot(histo, main = var, xlab = var, 
-       xlim = c(floor(range(pd_bot[, var])[1]),
-                ceiling(range(pd_bot[, var])[2])))
+       xlim = c(floor(range(ld_bot[, var])[1]),
+                ceiling(range(ld_bot[, var])[2])))
   par(new = T)
   plot(det.bins$mids, det.bins$detect,
-       xlim = c(floor(range(pd_bot[, var])[1]),
-                ceiling(range(pd_bot[, var])[2])),
+       xlim = c(floor(range(ld_bot[, var])[1]),
+                ceiling(range(ld_bot[, var])[2])),
        col = 'blue', xaxt = "n", yaxt = "n", xlab = "", ylab = "")
   axis(4, at = seq(0, ceiling(range(det.bins$detect)[2]), 5),
        col.axis = 'blue')
@@ -56,20 +56,20 @@ test('Cond', 2)
 
 
 # Overplot general histogram, then histogram where detections > 0
-pd_bot <- pass.dat %>%
+ld_bot <- listen.dat %>%
     filter(Type == 'B')
 histoplot <- function (var, binwidth = NULL) {
-  det.data <- substitute(pd_bot %>% filter(Detections > 0) %>% arrange(var) %>%
+  det.data <- substitute(ld_bot %>% filter(Detections > 0) %>% arrange(var) %>%
                            mutate(cumulative = cumsum(Detections),
                                   cumulative = cumulative/max(cumulative)*100),
                          list(var = as.name(var)))
   det.data <- eval(det.data)
   
-  call <- substitute(ggplot() + geom_histogram(data = pd_bot, aes(x = var),
+  call <- substitute(ggplot() + geom_histogram(data = ld_bot, aes(x = var),
                                                binwidth = binwidth) +
                        geom_histogram(data = det.data,
                                       aes(x = var, color = 'red'),
-                                      binwidth = binwidth) +
+                                       binwidth = binwidth) +
                        geom_line(data = det.data, aes(x = var,
                                                       y = cumulative)),
                      list(var = as.name(var)))
@@ -81,3 +81,49 @@ histoplot('Sal', 2)
 histoplot('Cond', 2)
 histoplot('pred.growth')
 histoplot('Depth')
+
+
+hist_cum_plot <- function (var, width) {
+  brks <- seq(floor(range(ld_bot[, var])[1]), ceiling(range(ld_bot[, var])[2]),
+              width)
+  
+  cum.dat <- substitute(ld_bot %>% filter(Detections > 0) %>% arrange(var) %>%
+                           mutate(cumulative = cumsum(Detections),
+                                  cumulative = cumulative/max(cumulative)*100),
+                        list(var = as.name(var)))
+  cum.dat <- eval(cum.dat)
+  
+  
+  par(mar = c(5, 4, 4, 5) + 0.1)
+  j <- hist(ld_bot[, var], breaks = brks, plot = F)
+  hist(ld_bot[, var], breaks = brks,
+       xlim = c(floor(range(ld_bot[, var])[1]),
+                ceiling(range(ld_bot[, var])[2])),
+       ylim = c(0, max(j$counts)),
+       xlab = var,
+       main = paste('Histogram of', var))
+  
+  par(new = T)
+  hist(ld_bot[ld_bot$Detections > 0, var], breaks = brks,
+       col = 'red', xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',
+       xlim = c(floor(range(ld_bot[, var])[1]),
+                ceiling(range(ld_bot[, var])[2])),
+       ylim = c(0, max(j$counts)))
+  
+  par(new = T)
+  plot(cum.dat[, var], cum.dat[, 19], 
+       xlim = c(floor(range(ld_bot[, var])[1]),
+                ceiling(range(ld_bot[, var])[2])),
+       type = 'l', col = 'blue',
+       xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',)
+  axis(4, at = c(0, 20, 40, 60, 80, 100), col.axis = 'blue')
+    mtext('Cumulative Detections (%)', side = 4, line = 3, col = 'blue')
+}
+
+hist_cum_plot('Temp', 1)
+hist_cum_plot('DO.pct', 5)
+hist_cum_plot('Sal', 2)
+hist_cum_plot('Cond', 2)
+hist_cum_plot('Depth')
+
+grid.arrange(a1, a2, ncol = 2)
