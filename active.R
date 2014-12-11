@@ -103,4 +103,34 @@ env.plot <- function(system, cruise, env.var, type = 'B'){
   eval(plot.call)
 }
   
-env.plot('yk', '2014_5', 'Temp','S')
+env.plot('pk', '2014_5', 'Temp','S')
+
+
+
+
+hold <- data.frame(Cruise = levels(factor(pass.dat$Cruise)),
+                   d.range = NA)
+for(i in seq(1, dim(hold)[1],1)){
+  hold$d.range[i] <- paste(range(filter(pass.dat, Cruise == hold[i, 1])$Date),
+                        collapse = ' - ')
+}
+hold$d.range <- factor(hold$d.range, levels = hold$d.range, ordered = T)
+pass.dat <- merge(pass.dat, hold)
+rm(hold, i)
+
+
+ggplot() +
+  geom_point(data = filter(pass.dat, Type == 'B'),
+             aes(x = DD.Long, y = DD.Lat, color = Temp, size = Detections)) +
+  facet_wrap(~ d.range) +
+  scale_color_continuous(low = 'blue', high = 'orange') + 
+  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  geom_point(data = filter(pass.dat, Detections != '0'),
+             aes(x = DD.Long, y = DD.Lat, size = Detections),
+             shape = 21, color = 'black') +
+  geom_polygon(data = yk.df,
+                     aes(x = long, y = lat, group = group),
+                     fill = 'lightgray', color = 'black', alpha = 0.3) +
+  theme_bw() +
+  labs(x = 'Longitude', y = 'Latitude', title = 'Temperature', color = 'Temperature')
+  
