@@ -20,6 +20,59 @@ pass.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
 pass.dat$Detections <- as.factor(pass.dat$Detections)
 
 
+hold <- data.frame(Cruise = levels(factor(pass.dat$Cruise)),
+                   d.range = NA)
+for(i in seq(1, dim(hold)[1],1)){
+  hold$d.range[i] <- paste(range(filter(pass.dat, Cruise == hold[i, 1])$Date),
+                        collapse = ' - ')
+}
+hold$d.range <- factor(hold$d.range, levels = hold$d.range, ordered = T)
+pass.dat <- merge(pass.dat, hold)
+rm(hold, i)
+
+# Full system
+png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
+    width = 1200, height = 650, res = 90)
+ggplot() +
+  geom_point(data = filter(pass.dat, Type == 'B'),
+             aes(x = DD.Long, y = DD.Lat, color = DO.mg_l, size = Detections)) +
+  facet_wrap(~ d.range) +
+  scale_color_continuous(low = 'blue', high = 'orange') + 
+  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  geom_point(data = filter(pass.dat, Detections != '0'),
+             aes(x = DD.Long, y = DD.Lat, size = Detections),
+             shape = 21, color = 'black') +
+  geom_polygon(data = yk.df,
+                     aes(x = long, y = lat, group = group),
+                     fill = 'lightgray', color = 'black', alpha = 0.3) +
+  theme_bw() +
+  labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Dissolved Oxygen (mg/L)',
+       color = 'DO (mg/L)')
+dev.off()
+
+# Partial system
+png(file="p:/obrien/biotelemetry/csi/listening/2014 images/YKBotCond.png",
+    width = 1200, height = 650, res = 90)
+ggplot() +
+  geom_point(data = filter(pass.dat, grepl('YK', Site.ID), Type == 'B'),
+             aes(x = DD.Long, y = DD.Lat, color = Cond, size = Detections)) +
+  facet_wrap(~ d.range) +
+  scale_color_continuous(low = 'blue', high = 'orange') + 
+  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  geom_point(data = filter(pass.dat, Detections != '0', grepl('YK', Site.ID)),
+             aes(x = DD.Long, y = DD.Lat, size = Detections),
+             shape = 21, color = 'black') +
+  geom_polygon(data = yk.plot,
+                     aes(x = long, y = lat, group = group),
+                     fill = 'lightgray', color = 'black', alpha = 0.3) +
+  theme_bw() +
+  labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Conductivity (mS/cm)',
+       color = 'Conductivity')
+dev.off()
+
+
+
+# Other Functions
 det.plot <- function(system, cruise, circ.filt = F){
   map <- if(grepl('p', system, ignore.case = T)){
     pk.plot
@@ -104,33 +157,3 @@ env.plot <- function(system, cruise, env.var, type = 'B'){
 }
   
 env.plot('pk', '2014_5', 'Temp','S')
-
-
-
-
-hold <- data.frame(Cruise = levels(factor(pass.dat$Cruise)),
-                   d.range = NA)
-for(i in seq(1, dim(hold)[1],1)){
-  hold$d.range[i] <- paste(range(filter(pass.dat, Cruise == hold[i, 1])$Date),
-                        collapse = ' - ')
-}
-hold$d.range <- factor(hold$d.range, levels = hold$d.range, ordered = T)
-pass.dat <- merge(pass.dat, hold)
-rm(hold, i)
-
-
-ggplot() +
-  geom_point(data = filter(pass.dat, Type == 'B'),
-             aes(x = DD.Long, y = DD.Lat, color = Temp, size = Detections)) +
-  facet_wrap(~ d.range) +
-  scale_color_continuous(low = 'blue', high = 'orange') + 
-  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
-  geom_point(data = filter(pass.dat, Detections != '0'),
-             aes(x = DD.Long, y = DD.Lat, size = Detections),
-             shape = 21, color = 'black') +
-  geom_polygon(data = yk.df,
-                     aes(x = long, y = lat, group = group),
-                     fill = 'lightgray', color = 'black', alpha = 0.3) +
-  theme_bw() +
-  labs(x = 'Longitude', y = 'Latitude', title = 'Temperature', color = 'Temperature')
-  
