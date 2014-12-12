@@ -120,10 +120,11 @@ hist_cum_plot <- function (var, width) {
     mtext('Cumulative Detections (%)', side = 4, line = 3, col = 'blue')
 }
 
-hist_cum_plot('Temp', 1)
+hist_cum_plot('Temp', 2)
 hist_cum_plot('DO.pct', 5)
+hist_cum_plot('DO.mg_l', 0.5)
 hist_cum_plot('Sal', 2)
 hist_cum_plot('Cond', 2)
-hist_cum_plot('Depth')
+hist_cum_plot('Depth', 2)
 
 grid.arrange(a1, a2, ncol = 2)

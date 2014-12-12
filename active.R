@@ -70,6 +70,20 @@ ggplot() +
        color = 'Conductivity')
 dev.off()
 
+png(file="p:/obrien/biotelemetry/csi/listening/2014 images/alldetections.png",
+    width = 1200, height = 650, res = 90)
+ggplot() +
+  facet_wrap(~ d.range) +
+  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  geom_polygon(data = yk.df,
+                     aes(x = long, y = lat, group = group),
+                     fill = 'lightgray', color = 'black') +
+  geom_point(data = filter(pass.dat, Detections != '0'),
+             aes(x = DD.Long, y = DD.Lat),
+             color = 'red') +
+  theme_bw() +
+  labs(x = 'Longitude', y = 'Latitude', title = 'Atlantic Sturgeon Detections')
+dev.off()
 
 
 # Other Functions
