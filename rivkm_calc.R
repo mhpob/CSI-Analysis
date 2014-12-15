@@ -8,18 +8,15 @@ york@data$ID <- ifelse(york$PERMANENT_ %in% c(128576612, 143959607), 'yk',
                        ifelse(york$PERMANENT_ == 120007614, 'pk', 'mp'))
 york <- spChFIDs(york, paste0(york@data$ID, row.names(york)))
 
-
+# Create raster of York River shapefile
 ras.back <- raster(extent(bbox(york[grepl('pk',york@data$ID),])),
                    resolution = 1/2160, #5 arc-second grids = 720, 10 = 360
                    vals = 1,
                    crs = proj4string(york))
 ras.pk <- rasterize(york[york$ID %in% c('pk', 'yk'),], ras.back)
-# plot(ras.pk)
+
 
 pk.trans16 <- transition(ras.pk, transitionFunction = function(x){1}, 16)
-# send_message(mime() %>% to('2679701973@txt.att.net') %>%
-#                subject('Transition layer done.'))
-# Geographic correction
 pk.geo16 <- geoCorrection(pk.trans16, type = 'c')
 
 act.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',

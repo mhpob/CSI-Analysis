@@ -1,25 +1,28 @@
 library(rgdal); library(ggplot2); library(dplyr)
 
-## Load shapefiles. Shapefiles downloaded from USGS.
-york <- readOGR('p:/obrien/gis/shapefiles', 'YKPKRivs')
+# Input -------------------------------------------------------------------
+# Load shapefiles. Shapefiles downloaded from USGS.
+york <- readOGR('p:/obrien/gis/shapefiles', 'YKPKCLIP')
 
-york@data$ID <- ifelse(york@data$FTYPE %in% c(364, 460), 'pk', 'yk')
+york <- york[york$PERMANENT_ %in%
+            c("120007612", "120007614", "128576612", "143959607"),]
+
+york@data$ID <- ifelse(york$PERMANENT_ %in% c(128576612, 143959607), 'yk',
+                       ifelse(york$PERMANENT_ == 120007614, 'pk', 'mp'))
 york <- spChFIDs(york, paste0(york@data$ID, row.names(york)))
 
-## fortify() to turn the object into a data frame suitable for 
-# plotting with ggplot2
+
 yk.df <- fortify(york)
 
-## filter() out the points I don't want to have plotted.
 yk.plot <- filter(yk.df, grepl('yk', group))
 pk.plot <- filter(yk.df, grepl('pk', group))
 
-## Detection data
+# Detection data
 pass.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
                      header = T, stringsAsFactors = F)
 pass.dat$Detections <- as.factor(pass.dat$Detections)
 
-
+# New factor to correctly order cruises
 hold <- data.frame(Cruise = levels(factor(pass.dat$Cruise)),
                    d.range = NA)
 for(i in seq(1, dim(hold)[1],1)){
@@ -30,6 +33,7 @@ hold$d.range <- factor(hold$d.range, levels = hold$d.range, ordered = T)
 pass.dat <- merge(pass.dat, hold)
 rm(hold, i)
 
+# Plotting ----------------------------------------------------------------
 # Full system
 png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
     width = 1200, height = 650, res = 90)
@@ -70,6 +74,7 @@ ggplot() +
        color = 'Conductivity')
 dev.off()
 
+# Only Detections, no water quality
 png(file="p:/obrien/biotelemetry/csi/listening/2014 images/alldetections.png",
     width = 1200, height = 650, res = 90)
 ggplot() +
