@@ -1,4 +1,4 @@
-library(rgdal); library(ggplot2); library(dplyr)
+library(TelemetryR); library(rgdal); library(ggplot2); library(dplyr)
 
 # Input -------------------------------------------------------------------
 # Load shapefiles. Shapefiles downloaded from USGS.
@@ -21,6 +21,9 @@ pk.plot <- filter(yk.df, grepl('pk', group))
 pass.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
                      header = T, stringsAsFactors = F)
 pass.dat$Detections <- as.factor(pass.dat$Detections)
+pass.dat <- pass.dat %>% 
+  mutate(pred.growth = sturgrow(Temp, Sal, DO.pct),
+         river = substr(Site.ID, 1, 2))
 
 # New factor to correctly order cruises
 hold <- data.frame(Cruise = levels(factor(pass.dat$Cruise)),
@@ -35,8 +38,8 @@ rm(hold, i)
 
 # Plotting ----------------------------------------------------------------
 # Full system
-png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
-    width = 1200, height = 650, res = 90)
+# png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
+#     width = 1200, height = 650, res = 90)
 ggplot() +
   geom_point(data = filter(pass.dat, Type == 'B'),
              aes(x = DD.Long, y = DD.Lat, color = DO.mg_l, size = Detections)) +
@@ -52,11 +55,11 @@ ggplot() +
   theme_bw() +
   labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Dissolved Oxygen (mg/L)',
        color = 'DO (mg/L)')
-dev.off()
+# dev.off()
 
 # Partial system
-png(file="p:/obrien/biotelemetry/csi/listening/2014 images/YKBotCond.png",
-    width = 1200, height = 650, res = 90)
+# png(file="p:/obrien/biotelemetry/csi/listening/2014 images/YKBotCond.png",
+#     width = 1200, height = 650, res = 90)
 ggplot() +
   geom_point(data = filter(pass.dat, grepl('YK', Site.ID), Type == 'B'),
              aes(x = DD.Long, y = DD.Lat, color = Cond, size = Detections)) +
@@ -72,11 +75,11 @@ ggplot() +
   theme_bw() +
   labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Conductivity (mS/cm)',
        color = 'Conductivity')
-dev.off()
+# dev.off()
 
 # Only Detections, no water quality
-png(file="p:/obrien/biotelemetry/csi/listening/2014 images/alldetections.png",
-    width = 1200, height = 650, res = 90)
+# png(file="p:/obrien/biotelemetry/csi/listening/2014 images/alldetections.png",
+#     width = 1200, height = 650, res = 90)
 ggplot() +
   facet_wrap(~ d.range) +
   scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
@@ -88,7 +91,7 @@ ggplot() +
              color = 'red') +
   theme_bw() +
   labs(x = 'Longitude', y = 'Latitude', title = 'Atlantic Sturgeon Detections')
-dev.off()
+# dev.off()
 
 
 # Other Functions
