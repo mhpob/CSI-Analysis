@@ -1,7 +1,8 @@
 library(rgdal); library(ggvis); library(dplyr)
 
 ## Load shapefiles. Shapefiles downloaded from USGS.
-york <- readOGR('p:/obrien/gis/shapefiles', 'YKPKCLIP')
+york <- readOGR('c:/users/secor lab/desktop/gis products/york_pamunkey creation',
+                'YKPKCLIP')
 
 york <- york[york$PERMANENT_ %in%
             c("120007612", "120007614", "128576612", "143959607"),]

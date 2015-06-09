@@ -1,6 +1,7 @@
 library(gdistance); library(raster); library(rgdal); library(dplyr)
 
-york <- readOGR('c:/users/secor lab/desktop/gis products', 'YKPKdist')
+york <- readOGR('c:/users/secor lab/desktop/gis products/york_pamunkey creation',
+                'YKPKCLIP')
 york <- york[york$PERMANENT_ %in%
             c("120007612", "120007614", "128576612", "143959607"),]
 
