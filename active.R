@@ -1,6 +1,6 @@
 library(TelemetryR); library(rgdal); library(ggplot2); library(dplyr)
 
-# Input -------------------------------------------------------------------
+## Input -------------------------------------------------------------------
 # Load shapefiles. Shapefiles downloaded from USGS.
 york <- readOGR('c:/users/secor lab/desktop/gis products/york_pamunkey creation',
                 'YKPKCLIP')
@@ -37,46 +37,64 @@ hold$d.range <- factor(hold$d.range, levels = hold$d.range, ordered = T)
 pass.dat <- merge(pass.dat, hold)
 rm(hold, i)
 
-# Plotting ----------------------------------------------------------------
-# Full system
+## Plotting ----------------------------------------------------------------
+# Water Quality
+WQplot <- function(var, type = 'B', system = 'all'){
+  title.type <- switch(type,
+                       B = 'Bottom',
+                       S = 'Surface')
+  title.print <- switch(var,
+                  Depth = 'Depth (m)',
+                  Temp = 'Temperature (°C)',
+                  Cond = 'Conductivity (mS/cm)',
+                  Sal = 'Salinity',
+                  DO.pct = 'Dissolved Oxygen (% Saturation)',
+                  DO.mg_l = 'Dissolved Oxygen (mg/L)',
+                  pred.growth = 'Predicted Growth (per day)')
+  title.print <- paste(title.type, title.print, sep = ' ')
+  
+  legend.print <- switch(var,
+                   Depth = 'Depth',
+                   Temp = 'Temperature',
+                   Cond = 'Conductivity',
+                   Sal = 'Salinity',
+                   DO.pct = 'DO (%)',
+                   DO.mg_l = 'DO (mg/L)',
+                   pred.growth = 'Growth')
+  
+  system.plot <- switch(system,
+                        all = yk.df,
+                        YK = yk.plot,
+                        PK = pk.plot)
+  
+  system.dat <- switch(system,
+                   all = pass.dat,
+                   YK = filter(pass.dat, grepl('YK', Site.ID)),
+                   PK = filter(pass.dat, grepl('PK', Site.ID)))
+  
+  ggplot(environment = environment()) +
+  geom_point(data = filter(system.dat, Type == type),
+             aes(x = DD.Long, y = DD.Lat, color = DO.mg_l, size = Detections),
+                 environment = environment())+ 
+  facet_wrap(~ d.range) +
+  scale_color_continuous(low = 'blue', high = 'orange') + 
+  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  geom_point(data = filter(system.dat, Detections != '0'),
+             aes(x = DD.Long, y = DD.Lat, size = Detections),
+             shape = 21, color = 'black') +
+  geom_polygon(data = system.plot,
+                     aes(x = long, y = lat, group = group),
+                     fill = 'lightgray', color = 'black', alpha = 0.3) +
+  theme_bw() +
+  labs(x = 'Longitude', y = 'Latitude', title = title.print,
+       color = legend.print)
+}
+
 # png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
 #     width = 1200, height = 650, res = 90)
-ggplot() +
-  geom_point(data = filter(pass.dat, Type == 'B'),
-             aes(x = DD.Long, y = DD.Lat, color = DO.mg_l, size = Detections)) +
-  facet_wrap(~ d.range) +
-  scale_color_continuous(low = 'blue', high = 'orange') + 
-  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
-  geom_point(data = filter(pass.dat, Detections != '0'),
-             aes(x = DD.Long, y = DD.Lat, size = Detections),
-             shape = 21, color = 'black') +
-  geom_polygon(data = yk.df,
-                     aes(x = long, y = lat, group = group),
-                     fill = 'lightgray', color = 'black', alpha = 0.3) +
-  theme_bw() +
-  labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Dissolved Oxygen (mg/L)',
-       color = 'DO (mg/L)')
+WQplot('pred.growth')
 # dev.off()
 
-# Partial system
-# png(file="p:/obrien/biotelemetry/csi/listening/2014 images/YKBotCond.png",
-#     width = 1200, height = 650, res = 90)
-ggplot() +
-  geom_point(data = filter(pass.dat, grepl('YK', Site.ID), Type == 'B'),
-             aes(x = DD.Long, y = DD.Lat, color = Cond, size = Detections)) +
-  facet_wrap(~ d.range) +
-  scale_color_continuous(low = 'blue', high = 'orange') + 
-  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
-  geom_point(data = filter(pass.dat, Detections != '0', grepl('YK', Site.ID)),
-             aes(x = DD.Long, y = DD.Lat, size = Detections),
-             shape = 21, color = 'black') +
-  geom_polygon(data = yk.plot,
-                     aes(x = long, y = lat, group = group),
-                     fill = 'lightgray', color = 'black', alpha = 0.3) +
-  theme_bw() +
-  labs(x = 'Longitude', y = 'Latitude', title = 'Bottom Conductivity (mS/cm)',
-       color = 'Conductivity')
-# dev.off()
 
 # Only Detections, no water quality
 # png(file="p:/obrien/biotelemetry/csi/listening/2014 images/alldetections.png",
@@ -95,8 +113,9 @@ ggplot() +
 # dev.off()
 
 
-# Other Functions
-det.plot <- function(system, cruise, circ.filt = F){
+## Other Functions
+# Plot estimated receiver range. circ.filt = T drops circle points on land.
+range.plot <- function(system, cruise, circ.filt = F){
   map <- if(grepl('p', system, ignore.case = T)){
     pk.plot
   } else{
@@ -141,12 +160,9 @@ det.plot <- function(system, cruise, circ.filt = F){
     labs(x = 'Longitude', y = 'Latitude', title = sys.title) 
 }
 
-det.plot('yk', '2014_1')
-det.plot('yk', '2014_2')
-det.plot('yk', '2014_3')
-det.plot('yk', '2014_4')
-det.plot('yk', '2014_5')
+range.plot('yk', '2014_1')
 
+# Cruise-specific water quality
 env.plot <- function(system, cruise, env.var, type = 'B'){
   map <- if(grepl('p', system, ignore.case = T)){
     pk.plot
