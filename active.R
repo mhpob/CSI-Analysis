@@ -22,7 +22,7 @@ pk.plot <- filter(yk.df, grepl('pk', group))
 pass.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
                      header = T, stringsAsFactors = F)
 pass.dat$Detections <- as.factor(pass.dat$Detections)
-pass.dat <- pass.dat %>% 
+pass.dat <- pass.dat %>%
   mutate(pred.growth = sturgrow(Temp, Sal, DO.pct),
          river = substr(Site.ID, 1, 2))
 
@@ -52,7 +52,7 @@ WQplot <- function(var, type = 'B', system = 'all'){
                   DO.mg_l = 'Dissolved Oxygen (mg/L)',
                   pred.growth = 'Predicted Growth (per day)')
   title.print <- paste(title.type, title.print, sep = ' ')
-  
+
   legend.print <- switch(var,
                    Depth = 'Depth',
                    Temp = 'Temperature',
@@ -61,24 +61,26 @@ WQplot <- function(var, type = 'B', system = 'all'){
                    DO.pct = 'DO (%)',
                    DO.mg_l = 'DO (mg/L)',
                    pred.growth = 'Growth')
-  
+
   system.plot <- switch(system,
                         all = yk.df,
                         YK = yk.plot,
                         PK = pk.plot)
-  
+
   system.dat <- switch(system,
                    all = pass.dat,
                    YK = filter(pass.dat, grepl('YK', Site.ID)),
                    PK = filter(pass.dat, grepl('PK', Site.ID)))
-  
+  system.dat$plot.var <- system.dat[, var]
+
   ggplot(environment = environment()) +
   geom_point(data = filter(system.dat, Type == type),
-             aes(x = DD.Long, y = DD.Lat, color = DO.mg_l, size = Detections),
-                 environment = environment())+ 
+             aes(x = DD.Long, y = DD.Lat, color = plot.var, size = Detections),
+                 environment = environment())+
   facet_wrap(~ d.range) +
-  scale_color_continuous(low = 'blue', high = 'orange') + 
-  scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  scale_color_continuous(low = 'blue', high = 'orange') +
+  scale_size_manual(values = c(4, 7, 10, 12, 15),
+                    breaks = c('0', '1', '2', '3', '4')) +
   geom_point(data = filter(system.dat, Detections != '0'),
              aes(x = DD.Long, y = DD.Lat, size = Detections),
              shape = 21, color = 'black') +
@@ -92,7 +94,7 @@ WQplot <- function(var, type = 'B', system = 'all'){
 
 # png(file="p:/obrien/biotelemetry/csi/listening/2014 images/BotDOmgl.png",
 #     width = 1200, height = 650, res = 90)
-WQplot('pred.growth')
+WQplot('DO.mg_l')
 # dev.off()
 
 
@@ -121,10 +123,10 @@ range.plot <- function(system, cruise, circ.filt = F){
   } else{
     yk.plot
   }
-  
+
   sys.title <- ifelse(grepl('p', system, ignore.case = T), 'Pamunkey', 'York')
   sys.title <- paste(sys.title, cruise, sep = ' ')
-  
+
   system <- if(grepl('p', system, ignore.case = T)){
     filter(pass.dat, grepl('PK', Site.ID))
   } else{
@@ -148,8 +150,8 @@ range.plot <- function(system, cruise, circ.filt = F){
     circ.9 <- cirselect(circ.9, york)
     circ.5 <- cirselect(circ.5, york)
   }
-  
-  
+
+
   ggplot() + geom_path(data = map, aes(x = long, y = lat, group = group)) +
     geom_polygon(data = circ.9,
                  aes(long, lat, group = circle), fill = 'red', alpha = 0.2) +
@@ -157,7 +159,7 @@ range.plot <- function(system, cruise, circ.filt = F){
                  aes(long, lat, group = circle), fill = 'green', alpha = 0.3) +
     geom_point(data = cruise, aes(x = DD.Long, y = DD.Lat, size = Detections)) +
     scale_size_manual(values = c(1,3,5,7), breaks = c('0','1','2','3')) +
-    labs(x = 'Longitude', y = 'Latitude', title = sys.title) 
+    labs(x = 'Longitude', y = 'Latitude', title = sys.title)
 }
 
 range.plot('yk', '2014_1')
@@ -171,15 +173,15 @@ env.plot <- function(system, cruise, env.var, type = 'B'){
   }
   sys.title <- ifelse(grepl('p', system, ignore.case = T), 'Pamunkey', 'York')
   sys.title <- paste(sys.title, cruise, sep = ' ')
-  
+
   system <- if(grepl('p', system, ignore.case = T)){
     filter(pass.dat, grepl('PK', Site.ID))
   } else{
     filter(pass.dat, grepl('YK', Site.ID))
   }
-  
+
   cruise <- filter(system, Cruise == cruise, Type == type)
-  
+
   plot.call <-
     substitute(ggplot() +
     geom_path(data = map, aes(x = long, y = lat, group = group)) +
@@ -194,5 +196,5 @@ env.plot <- function(system, cruise, env.var, type = 'B'){
     list(VAR = as.name(env.var)))
   eval(plot.call)
 }
-  
+
 env.plot('pk', '2014_5', 'Temp','S')
