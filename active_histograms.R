@@ -35,25 +35,44 @@ hist_cum_plot <- function (var, width) {
   cum.dat <- eval(cum.dat)
   
   
-  par(mar = c(5, 4, 4, 5) + 0.1)
-  j <- hist(ld_bot[, var], breaks = brks, plot = F)
-  hist(ld_bot[, var], breaks = brks,
+  data.all <- hist(ld_bot[, var], breaks = brks, plot = F)
+  data.2014 <- 
+    hist(ld_bot[ld_bot$Detections > 0 & grepl('14', ld_bot$Cruise), var],
+       breaks = brks, plot = F)
+  data.2015 <-
+    hist(ld_bot[ld_bot$Detections > 0 & grepl('15', ld_bot$Cruise), var],
+       breaks = brks, plot = F)
+  max.y <- max(data.all$density, data.2014$density, data.2015$density)
+  
+  
+  par(mar = c(5, 4, 4, 5) + 0.1)  
+  plot(data.2015, freq = F,
+       col = rgb(1, 0, 0.5),
+       border = 'black',
+       xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',
        xlim = lims,
-       ylim = c(0, max(j$counts)),
+       ylim = c(0, max.y))
+  
+  par(new = T)
+  plot(data.2014, freq = F,
+       col = rgb(0, 1, 0, 0.6),
+       border = 'black',
+       xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',
+       xlim = lims,
+       ylim = c(0, max.y))
+  
+  par(new = T, lwd = 3)
+  plot(data.all, freq = F,
+       xlim = lims,
+       ylim = c(0, max.y),
        xlab = var,
        main = paste('Histogram of', var))
   
-  par(new = T)
-  hist(ld_bot[ld_bot$Detections > 0, var], breaks = brks,
-       col = 'red', xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',
-       xlim = lims,
-       ylim = c(0, max(j$counts)))
-  
-  par(new = T)
+  par(new = T, lwd = 1)
   plot(cum.dat[, var], cum.dat[, 19], 
        xlim = lims,
        type = 'l', col = 'blue',
-       xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '',)
+       xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = '')
   axis(4, at = c(0, 20, 40, 60, 80, 100), col.axis = 'blue')
     mtext('Cumulative Detections (%)', side = 4, line = 3, col = 'blue')
 }
