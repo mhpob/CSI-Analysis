@@ -4,7 +4,7 @@ act.dat <- read.csv('p:/obrien/biotelemetry/csi/listening/activedata.csv',
 act.dat <- act.dat %>% 
   mutate(pred.growth = TelemetryR::sturgrow(Temp, Sal, DO.pct),
          river = substr(Site.ID, 1, 2))
-dist <- read.csv('distances.csv', header = F,
+dist <- read.csv('distances.csv', header = F, stringsAsFactors = F,
                  col.names = c('Site.ID', 'PKrivkm'))
 
 hold <- data.frame(Cruise = levels(factor(act.dat$Cruise)),
@@ -21,7 +21,8 @@ pk.dat <- act.dat %>%
   left_join(dist) %>%
   mutate(PKrivkm = PKrivkm/1000,
          Date = lubridate::mdy(Date),
-         altdepth = 19 - Depth) %>%
+         altdepth = 19 - Depth,
+         year = lubridate::year(Date)) %>%
   filter(grepl('PK', Site.ID))
 
 
@@ -29,48 +30,52 @@ pk.dat <- act.dat %>%
 ## Date v river kilometer plotting #############################################
 temp <-
   ggplot() + geom_point(data = filter(pk.dat, Detections > 0, Type == 'B'),
-                        aes(x = Date, y = PKrivkm,
+                        aes(x = lubridate::yday(Date), y = PKrivkm,
                             size = factor(Detections), color = Temp)) +
   scale_color_continuous(low = 'blue', high = 'orange') +
   scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  facet_wrap(~year, ncol = 1) +
   ylim(c(0, 72)) +
-  labs(x = 'Date (2014)', y = 'River Kilometer',
+  labs(x = 'Day of Year', y = 'River Kilometer',
        size = 'Detections', color = 'Temp. (°C)')
 
 sal <-
   ggplot() + geom_point(data = filter(pk.dat, Detections > 0, Type == 'B'),
-                        aes(x = Date, y = PKrivkm,
+                        aes(x = lubridate::yday(Date), y = PKrivkm,
                             size = factor(Detections), color = Sal)) +
   scale_color_continuous(low = 'blue', high = 'orange') +
   scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  facet_wrap(~year, ncol = 1) +
   ylim(c(0, 72)) +
-  labs(x = 'Date (2014)', y = 'River Kilometer',
+  labs(x = 'Day of Year', y = 'River Kilometer',
        size = 'Detections', color = 'Salinity')
 
 dopct <-
   ggplot() + geom_point(data = filter(pk.dat, Detections > 0, Type == 'B'),
-                        aes(x = Date, y = PKrivkm,
+                        aes(x = lubridate::yday(Date), y = PKrivkm,
                             size = factor(Detections), color = DO.pct)) +
   scale_color_continuous(low = 'blue', high = 'orange') +
   scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  facet_wrap(~year, ncol = 1) +
   ylim(c(0, 72)) +
-  labs(x = 'Date (2014)', y = 'River Kilometer',
+  labs(x = 'Day of Year', y = 'River Kilometer',
        size = 'Detections', color = 'D.O. (%)')
 
 predgr <-
   ggplot() + geom_point(data = filter(pk.dat, Detections > 0, Type == 'B'),
-                        aes(x = Date, y = PKrivkm,
+                        aes(x = lubridate::yday(Date), y = PKrivkm,
                             size = factor(Detections), color = pred.growth)) +
   scale_color_continuous(low = 'blue', high = 'orange') +
   scale_size_manual(values = c(4,7,10,12), breaks = c('0','1','2','3')) +
+  facet_wrap(~year, ncol = 1) +
   ylim(c(0, 72)) +
-  labs(x = 'Date (2014)', y = 'River Kilometer',
+  labs(x = 'Day of Year', y = 'River Kilometer',
        size = 'Detections', color = 'Growth')
 
 library(gridExtra)
-png('p:/obrien/biotelemetry/csi/listening/2014 images/datevkm.png',
+png('p:/obrien/biotelemetry/csi/listening/2014 images/datevkm2.png',
     height = 650, width = 1200)
-grid.arrange(sal, dopct, temp, predgr,
+grid.arrange(grobs = list(sal, dopct, temp, predgr),
              main = 'Pamunkey River Atlantic Sturgeon Detections')
 dev.off()
 
