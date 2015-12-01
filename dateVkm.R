@@ -109,7 +109,8 @@ pretty <- ggplot() +
   scale_x_reverse() + scale_y_reverse() +
   scale_color_continuous(low = 'blue', high = 'orange') +
   labs(x = 'Pamunkey River Kilometer', y = 'Depth (m)', color = 'Growth') +
-  theme_bw()
+  theme_bw() +
+  theme(strip.text.x = element_text(size=20)) 
 
 pretty <- ggplotGrob(pretty)
 pretty$grobs[names(pretty$grobs) %in% c("panel1", "strip_t1")] <-  NULL
