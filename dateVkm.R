@@ -80,9 +80,18 @@ grid.arrange(grobs = list(sal, dopct, temp, predgr),
 dev.off()
 
 ## River kilometer vs Depth vs Water Quality ###################################
-png('p:/obrien/biotelemetry/csi/listening/2014 images/kmvdepthvpredgrowth.png',
-    height = 775, width = 1200)
-ggplot() + geom_rect(data = pk.dat,
+# Change order to match weeks
+pk.dat$d.range <- factor(pk.dat$d.range, levels = c('', '6/17/2015 - 6/18/2015',
+                   '7/14/2014 - 7/17/2014', '7/14/2015 - 7/15/2015',
+                   '7/31/2014 - 8/1/2014', '8/4/2015 - 8/5/2015',
+                   '8/26/2014 - 8/27/2014', '8/25/2015 - 8/26/2015',
+                   '9/16/2014 - 9/17/2014', '9/15/2015 - 9/16/2015',
+                   '10/7/2014 - 10/8/2014', '10/7/2015 - 10/8/2015',
+                   '10/23/2014 - 10/24/2014', '10/27/2015 - 10/29/2015'),
+                   ordered = T)
+
+pretty <- ggplot() +
+  geom_rect(data = pk.dat,
             aes(xmin = 1.5, xmax = 71.25,
                 ymin = 0, ymax = 20),
             fill = 'gray') +
@@ -96,9 +105,19 @@ ggplot() + geom_rect(data = pk.dat,
             color = 'black', fill = NA) +
   geom_point(data = pk.dat,
              aes(x = PKrivkm, y = Depth, color = pred.growth), size = 4) +
-  facet_wrap(~d.range, ncol = 1) +
+  facet_wrap(~d.range, nrow = 7, drop = F) +
   scale_x_reverse() + scale_y_reverse() +
   scale_color_continuous(low = 'blue', high = 'orange') +
   labs(x = 'Pamunkey River Kilometer', y = 'Depth (m)', color = 'Growth') +
   theme_bw()
+
+pretty <- ggplotGrob(pretty)
+pretty$grobs[names(pretty$grobs) %in% c("panel1", "strip_t1")] <-  NULL
+# Remove empty panels from the layout
+pretty$layout <-  pretty$layout[!(pretty$layout$name %in%
+                                    c("panel-1", "strip_t-1")),]
+
+png('p:/obrien/biotelemetry/csi/progress reports/2015/kmvdepthvpredgrowth.png',
+    height = 800, width = 2000)
+plot(pretty)
 dev.off()
